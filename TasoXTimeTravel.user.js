@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TasoXTimeTravel
 // @namespace    https://github.com/sj84900/TasoXTimeTravel
-// @version      2026-01-04
+// @version      1.0.0
 // @description  X Grok 버튼 스타일을 반영한 날짜 이동 인터페이스
 // @author       Abren
 // @match        https://x.com/*
