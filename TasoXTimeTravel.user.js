@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TasoXTimeTravel
 // @namespace    https://github.com/sj84900/TasoXTimeTravel
-// @version      1.0.0
-// @description  X Grok 버튼 스타일을 반영한 날짜 이동 인터페이스
+// @version      1.0.1
+// @description  검색 날짜 1일 단위 이동 버튼 및 @amanekanatach 6년 전 오늘 트윗 바로가기 버튼
 // @author       Abren
 // @match        https://x.com/*
 // @downloadURL  https://raw.githubusercontent.com/sj84900/TasoXTimeTravel/main/TasoXTimeTravel.user.js
