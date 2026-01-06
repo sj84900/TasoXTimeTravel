@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TasoXTimeTravel
 // @namespace    https://github.com/sj84900/TasoXTimeTravel
-// @version      1.0.2
-// @description  검색 날짜 1일 단위 이동 버튼 및 @amanekanatach 6년 전 오늘 트윗 바로가기 버튼
+// @version      1.0.3
+// @description  검색 날짜 1일 단위 이동 버튼 및 @amanekanatach 6년 전 오늘 트윗 바로가기 버튼, 답글 대상 클릭시 검색대상 변경
 // @author       Abren
 // @match        https://x.com/*
 // @downloadURL  https://raw.githubusercontent.com/sj84900/TasoXTimeTravel/main/TasoXTimeTravel.user.js
@@ -24,14 +24,43 @@
         return getFormattedDate(d);
     };
 
-    // 주소창 이동 대신 X 내부 검색 로직을 트리거하는 함수
     const fastSearch = (query) => {
-        // 검색 페이지 URL 구조로 이동하되, 브라우저 캐시와 SPA 라우팅을 활용
         const searchUrl = `/search?q=${encodeURIComponent(query)}&src=typed_query&f=live`;
         window.history.pushState({}, '', searchUrl);
-        // 고유의 네비게이션 이벤트를 발생시키거나 popstate를 트리거하여 내부 로더 작동
         window.dispatchEvent(new PopStateEvent('popstate'));
     };
+
+    // 추가된 기능: 답글 링크 클릭 시 날짜를 유지하며 검색 대상 변경
+    function handleMentionClick(e) {
+        if (window.location.pathname !== '/search') return;
+
+        // 클릭된 요소가 @아이디 링크인지 확인
+        const link = e.target.closest('a[role="link"]');
+        if (!link || !link.getAttribute('href')?.startsWith('/')) return;
+
+        const userId = link.getAttribute('href').replace('/', '');
+        // 트위터 기본 메뉴 및 특정 경로 제외
+        const excludes = ['home', 'explore', 'notifications', 'messages', 'search', 'settings', 'i', 'messages'];
+        if (excludes.includes(userId) || userId.includes('/')) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q');
+
+        if (query && query.includes('since:')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            let newQuery = query;
+            if (query.includes('from:')) {
+                // 기존 from: 부분을 새로운 ID로 교체
+                newQuery = query.replace(/from:@?\w+/, `from:@${userId}`);
+            } else {
+                // from: 이 없으면 맨 앞에 추가
+                newQuery = `from:@${userId} ${query}`;
+            }
+            fastSearch(newQuery);
+        }
+    }
 
     function createMainButton() {
         const oldCont = document.getElementById('taso-time-travel-container');
@@ -63,7 +92,7 @@
                     Object.assign(btn.style, { display:'flex', alignItems:'center', justifyContent:'center', width:'48px', height:'48px', borderRadius:'12px', border:'none', background:'transparent', cursor:'pointer' });
                     btn.onclick = () => {
                         const newQuery = query.replace(`since:${since}`, `since:${shiftDate(since, off)}`).replace(`until:${until}`, `until:${shiftDate(until, off)}`);
-                        fastSearch(newQuery); // 내부 라우팅 사용
+                        fastSearch(newQuery);
                     };
                     return btn;
                 };
@@ -82,15 +111,16 @@
                 const sixY = new Date(); sixY.setFullYear(today.getFullYear() - 6);
                 const sixYUntil = new Date(sixY); sixYUntil.setDate(sixY.getDate() + 1);
                 const newQuery = `from:@amanekanatach since:${getFormattedDate(sixY)} until:${getFormattedDate(sixYUntil)}`;
-                fastSearch(newQuery); // 내부 라우팅 사용
+                fastSearch(newQuery);
             };
             container.appendChild(searchBtn);
             document.body.appendChild(container);
         }
     }
 
+    document.addEventListener('click', handleMentionClick, true);
+
     createMainButton();
-    // X의 내부 페이지 전환 감지 최적화
     let lastUrl = location.href;
     new MutationObserver(() => {
         if (location.href !== lastUrl) {
